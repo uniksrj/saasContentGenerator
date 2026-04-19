@@ -1,0 +1,33 @@
+body {
+    background-color: #e9f2ff !important;
+}
+
+.navbar {
+    background-color: #000000; /* Dark background */
+}
+.navbar-brand {
+    color: rgb(0, 0, 0);
+    margin-right: 20px; /* Spacing after brand name */
+}
+.search-bar {
+    display: flex;
+    align-items: center; /* Centering items vertically */
+    margin-right: 20px; /* Spacing after search bar */
+}
+.search-bar input {
+    margin-right: 10px; /* Space between input and button */
+}
+.social-icons {
+    margin-left: 15px;
+}
+.social-icons a {
+    color: white; /* Social icons color */
+    margin: 0 5px; /* Spacing between icons */
+}
+.navbar{
+    justify-content: space-around !important;
+}
+.s_block{
+    width: 30%;
+}
+
