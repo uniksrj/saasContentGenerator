@@ -14,7 +14,7 @@ use App\Http\Middleware\EnsureSubscribed;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [Blogmain::class, 'main'])->name('home');
-
+ 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('saas.login');
     Route::post('/login', [AuthController::class, 'login'])->name('saas.login.submit');

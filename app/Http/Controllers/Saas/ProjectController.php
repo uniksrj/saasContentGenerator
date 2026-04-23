@@ -4,13 +4,18 @@ namespace App\Http\Controllers\Saas;
 
 use App\Http\Controllers\Controller;
 use App\Models\Project;
+use App\Services\Saas\ProjectLifecycleService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class ProjectController extends Controller
 {
+    public function __construct(
+        private readonly ProjectLifecycleService $projectLifecycleService,
+    ) {
+    }
+
     public function index(Request $request): View
     {
         $user = $request->user();
@@ -39,25 +44,8 @@ class ProjectController extends Controller
             'settings' => ['nullable', 'array'],
         ]);
 
-        $baseSlug = Str::slug($validated['name']) ?: 'project';
-        $slug = $baseSlug;
-        $counter = 1;
-
-        while (Project::query()->where('user_id', $user->id)->where('slug', $slug)->exists()) {
-            $slug = $baseSlug . '-' . $counter;
-            $counter++;
-        }
-
-        $project = Project::query()->create([
-            'user_id' => $user->id,
-            'name' => $validated['name'],
-            'slug' => $slug,
-            'description' => $validated['description'] ?? null,
-            'settings' => $validated['settings'] ?? null,
-            'is_active' => true,
-        ]);
-
-        $user->update(['current_project_id' => $project->id]);
+        $project = $this->projectLifecycleService->createProject($user, $validated);
+        $user->fresh();
 
         return redirect()->route('saas.projects.index')->with('success', 'Project created and selected.');
     }
@@ -67,6 +55,7 @@ class ProjectController extends Controller
         $user = $request->user();
         abort_unless($user !== null, 401);
         abort_if($project->user_id !== $user->id, 403);
+        abort_if(!$project->isAccessible(), 422, 'Please switch to an active project.');
 
         $user->update(['current_project_id' => $project->id]);
 

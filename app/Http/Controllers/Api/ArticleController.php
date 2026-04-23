@@ -16,6 +16,7 @@ class ArticleController extends Controller
         $user = $request->user();
         abort_unless($user !== null, 401, 'Unauthenticated.');
         abort_if($project->user_id !== $user->id, 403, 'Unauthorized project access.');
+        abort_if(!$project->isAccessible(), 422, 'This project is not active.');
 
         $validated = $request->validate([
             'status' => ['nullable', 'string', 'in:draft,published'],
@@ -39,6 +40,7 @@ class ArticleController extends Controller
         $user = $request->user();
         abort_unless($user !== null, 401, 'Unauthenticated.');
         abort_if($project->user_id !== $user->id, 403, 'Unauthorized project access.');
+        abort_if(!$project->isAccessible(), 422, 'This project is not active.');
         abort_if($article->project_id !== $project->id || $article->user_id !== $user->id, 403, 'Unauthorized article access.');
 
         $validated = $request->validate([
@@ -76,6 +78,7 @@ class ArticleController extends Controller
         $user = $request->user();
         abort_unless($user !== null, 401, 'Unauthenticated.');
         abort_if($project->user_id !== $user->id, 403, 'Unauthorized project access.');
+        abort_if(!$project->isAccessible(), 422, 'This project is not active.');
         abort_if($article->project_id !== $project->id || $article->user_id !== $user->id, 403, 'Unauthorized article access.');
 
         $article->update([

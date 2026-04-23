@@ -21,16 +21,33 @@ export interface ApiUser {
   plan?: Plan | null
 }
 
+export type ProjectStatus = 'active' | 'disabled' | 'removed'
+
 export interface Project {
   id: number
   name: string
   slug: string
   description?: string | null
+  status: ProjectStatus
   is_active: boolean
   topics_count?: number
   articles_count?: number
   created_at: string
   updated_at: string
+}
+
+export interface ProjectListMeta {
+  total_projects: number
+  active_projects: number
+  disabled_projects: number
+  removed_projects: number
+  project_limit: number | null
+  remaining_project_slots: number | null
+}
+
+export interface ProjectListResponse {
+  data: Project[]
+  meta: ProjectListMeta
 }
 
 export interface Topic {

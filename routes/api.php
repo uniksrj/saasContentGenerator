@@ -17,6 +17,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/projects', [ProjectController::class, 'store']);
     Route::get('/projects', [ProjectController::class, 'index']);
+    Route::patch('/projects/{project}/status', [ProjectController::class, 'updateStatus']);
 
     Route::get('/topics/{project}', [TopicController::class, 'index']);
     Route::post('/generate/{project}', [GenerationController::class, 'store'])

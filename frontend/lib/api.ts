@@ -8,6 +8,8 @@ import type {
   PaginatedResponse,
   ProfileData,
   Project,
+  ProjectListResponse,
+  ProjectStatus,
   Topic,
 } from '@/lib/types'
 
@@ -137,14 +139,26 @@ export const api = {
     return apiRequest<{ data: ProfileData }>('/profile')
   },
 
-  getProjects() {
-    return apiRequest<{ data: Project[] }>('/projects')
+  getProjects(params?: { includeInactive?: boolean; includeRemoved?: boolean }) {
+    return apiRequest<ProjectListResponse>(
+      `/projects${buildQuery({
+        include_inactive: params?.includeInactive,
+        include_removed: params?.includeRemoved,
+      })}`,
+    )
   },
 
   createProject(payload: { name: string; description?: string }) {
     return apiRequest<{ message: string; data: Project }>('/projects', {
       method: 'POST',
       body: payload,
+    })
+  },
+
+  updateProjectStatus(projectId: number, status: ProjectStatus) {
+    return apiRequest<{ message: string; data: Project }>(`/projects/${projectId}/status`, {
+      method: 'PATCH',
+      body: { status },
     })
   },
 

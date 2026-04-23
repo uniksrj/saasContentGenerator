@@ -12,6 +12,7 @@ class CurrentProjectResolver
         if ($user->current_project_id !== null) {
             $current = Project::query()
                 ->ownedBy($user->id)
+                ->active()
                 ->find($user->current_project_id);
 
             if ($current !== null) {
@@ -21,8 +22,8 @@ class CurrentProjectResolver
 
         return Project::query()
             ->ownedBy($user->id)
+            ->active()
             ->latest()
             ->first();
     }
 }
-

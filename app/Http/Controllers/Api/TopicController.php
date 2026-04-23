@@ -24,13 +24,13 @@ class TopicController extends Controller
         $user = $request->user();
         abort_unless($user !== null, 401, 'Unauthenticated.');
         abort_if($project->user_id !== $user->id, 403, 'Unauthorized project access.');
+        abort_if(!$project->isAccessible(), 422, 'This project is not active.');
 
         $validated = $request->validate([
-            'refresh' => ['nullable', 'boolean'],
             'limit' => ['nullable', 'integer', 'min:5', 'max:100'],
         ]);
 
-        $shouldRefresh = (bool) ($validated['refresh'] ?? false);
+        $shouldRefresh = $request->boolean('refresh');
         if ($shouldRefresh) {
             $this->generator->fetchAndStoreTopics($user->id, $project, (int) ($validated['limit'] ?? 25));
         }
@@ -51,6 +51,7 @@ class TopicController extends Controller
         $user = $request->user();
         abort_unless($user !== null, 401, 'Unauthenticated.');
         abort_if($project->user_id !== $user->id, 403, 'Unauthorized project access.');
+        abort_if(!$project->isAccessible(), 422, 'This project is not active.');
         abort_if($topic->project_id !== $project->id || $topic->user_id !== $user->id, 403, 'Unauthorized topic access.');
 
         $access = $this->usageLimitService->generationSnapshot($user);

@@ -36,7 +36,7 @@ export default function DashboardPage() {
         const profileData = profileResponse.data
         const availableProjects = projectsResponse.data
         const currentProject =
-          profileData.current_project ??
+          (profileData.current_project?.status === 'active' ? profileData.current_project : null) ??
           availableProjects.find((project) => project.id === profileData.user.current_project_id) ??
           availableProjects[0] ??
           null
@@ -113,7 +113,7 @@ export default function DashboardPage() {
 
       <section className="grid gap-4 md:grid-cols-4">
         {[
-          { label: 'Projects', value: profile?.counts.projects ?? 0, note: 'Active workspaces' },
+          { label: 'Projects', value: profile?.counts.projects ?? 0, note: 'Total created workspaces' },
           { label: 'Topics', value: profile?.counts.topics ?? 0, note: 'Ideas in pipeline' },
           { label: 'Articles', value: profile?.counts.articles ?? 0, note: 'Generated content' },
           {

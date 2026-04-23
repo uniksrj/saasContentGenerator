@@ -23,6 +23,7 @@ class GenerationController extends Controller
         $user = $request->user();
         abort_unless($user !== null, 401, 'Unauthenticated.');
         abort_if($project->user_id !== $user->id, 403, 'Unauthorized project access.');
+        abort_if(!$project->isAccessible(), 422, 'This project is not active.');
 
         $validated = $request->validate([
             'limit' => ['nullable', 'integer', 'min:1', 'max:20'],

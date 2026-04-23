@@ -1,6 +1,9 @@
+"use client"
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Check, X } from 'lucide-react'
+import { useState } from 'react'
+// import { useState } from 'react'
 
 const plans = [
   {
@@ -57,6 +60,8 @@ const invoices = [
 ]
 
 export default function BillingPage() {
+  const [name, setName] = useState("John Doe");
+  const [email, setEmail] = useState("john@example.com");
   return (
     <main className="p-6 space-y-6">
       {/* Header */}
@@ -84,11 +89,10 @@ export default function BillingPage() {
           {plans.map((plan) => (
             <Card
               key={plan.name}
-              className={`border p-8 transition ${
-                plan.current
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border bg-card hover:border-primary/50'
-              }`}
+              className={`border p-8 transition ${plan.current
+                ? 'border-primary bg-primary/5'
+                : 'border-border bg-card hover:border-primary/50'
+                }`}
             >
               {plan.current && (
                 <div className="mb-4 inline-block px-3 py-1 rounded-full bg-primary/20 text-primary text-sm font-semibold">
@@ -135,7 +139,8 @@ export default function BillingPage() {
             <label className="block text-sm font-medium mb-2">Full Name</label>
             <input
               type="text"
-              value="John Doe"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               className="w-full px-4 py-2 rounded-lg bg-secondary border border-border text-foreground"
             />
           </div>
@@ -143,7 +148,8 @@ export default function BillingPage() {
             <label className="block text-sm font-medium mb-2">Email</label>
             <input
               type="email"
-              value="john@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full px-4 py-2 rounded-lg bg-secondary border border-border text-foreground"
             />
           </div>

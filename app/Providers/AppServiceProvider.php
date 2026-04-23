@@ -33,6 +33,7 @@ class AppServiceProvider extends ServiceProvider
 
       $projects = Project::query()
         ->ownedBy($user->id)
+        ->active()
         ->orderBy('name')
         ->get(['id', 'name', 'slug']);
 
