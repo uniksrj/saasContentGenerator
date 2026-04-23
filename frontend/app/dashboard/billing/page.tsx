@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-import { AppShell } from '@/components/app-shell'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { api, getApiErrorMessage } from '@/lib/api'
@@ -296,17 +295,14 @@ export default function BillingPage() {
 
   if (loading) {
     return (
-      <AppShell>
-        <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-8 text-slate-200">
-          Loading billing options...
-        </div>
-      </AppShell>
+      <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-8 text-slate-200">
+        Loading billing options...
+      </div>
     )
   }
 
   return (
-    <AppShell>
-      <div className="space-y-6">
+    <div className="space-y-6">
         <section className="rounded-[2rem] border border-cyan-400/20 bg-gradient-to-r from-cyan-400/12 via-slate-900 to-slate-900 p-8">
           <p className="text-sm uppercase tracking-[0.25em] text-cyan-300">Billing</p>
           <h2 className="mt-3 text-3xl font-semibold text-white">Choose a plan and pay in one flow</h2>
@@ -506,7 +502,6 @@ export default function BillingPage() {
             {error}
           </div>
         ) : null}
-      </div>
-    </AppShell>
+    </div>
   )
 }
