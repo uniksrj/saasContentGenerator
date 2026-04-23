@@ -50,6 +50,43 @@ export interface ProjectListResponse {
   meta: ProjectListMeta
 }
 
+export interface BillingPlan {
+  id: number
+  name: string
+  slug: string
+  description?: string | null
+  monthly_article_limit: number
+  monthly_token_limit: number
+  price_cents: number
+  currency: string
+  billing_interval: string
+  stripe_price_id?: string | null
+  features: string[]
+  is_current: boolean
+  supports_upi: boolean
+}
+
+export interface BillingOverview {
+  stripe_publishable_key: string
+  subscription_status?: string | null
+  current_plan_id?: number | null
+  current_plan?: {
+    id: number
+    name: string
+    slug: string
+    currency: string
+    price_cents: number
+  } | null
+  plans: BillingPlan[]
+}
+
+export interface BillingSubscriptionResponse {
+  message: string
+  mode: 'local' | 'stripe'
+  subscription_id?: string | null
+  client_secret?: string | null
+}
+
 export interface Topic {
   id: number
   project_id: number

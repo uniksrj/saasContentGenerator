@@ -73,6 +73,57 @@ class SubscriptionService
         ];
     }
 
+    /**
+     * @return array{mode:string,subscription_id:?string,client_secret:?string,message:string}
+     */
+    public function startEmbeddedSubscription(User $user, Plan $plan): array
+    {
+        if (!$plan->is_active) {
+            throw new RuntimeException('This plan is not currently available.');
+        }
+
+        if ((int) $plan->price_cents === 0) {
+            $this->activateLocalSubscription($user, $plan);
+
+            return [
+                'mode' => 'local',
+                'subscription_id' => null,
+                'client_secret' => null,
+                'message' => 'Subscription activated successfully.',
+            ];
+        }
+
+        if (blank($plan->stripe_price_id)) {
+            throw new RuntimeException('This paid plan is missing a Stripe price ID.');
+        }
+
+        $customerId = $this->resolveStripeCustomer($user);
+        $response = $this->stripeRequest('post', 'subscriptions', [
+            'customer' => $customerId,
+            'items[0][price]' => $plan->stripe_price_id,
+            'payment_behavior' => 'default_incomplete',
+            'payment_settings[save_default_payment_method]' => 'on_subscription',
+            'billing_mode[type]' => 'flexible',
+            'metadata[user_id]' => (string) $user->id,
+            'metadata[plan_id]' => (string) $plan->id,
+            'expand[0]' => 'latest_invoice.confirmation_secret',
+        ]);
+
+        $subscriptionId = (string) $response->json('id');
+        $clientSecret = (string) data_get($response->json(), 'latest_invoice.confirmation_secret.client_secret', '');
+
+        if ($subscriptionId === '' || $clientSecret === '') {
+            throw new RuntimeException('Stripe subscription confirmation secret was not returned.');
+        }
+
+        return [
+            'mode' => 'stripe',
+            'subscription_id' => $subscriptionId,
+            'client_secret' => $clientSecret,
+            'message' => 'Payment form ready.',
+        ];
+    }
+
     public function cancelSubscription(User $user): void
     {
         if ($user->isAdmin()) {
@@ -110,6 +161,34 @@ class SubscriptionService
         return $user->fresh();
     }
 
+    public function syncSubscription(string $subscriptionId): ?User
+    {
+        $response = $this->stripeRequest('get', 'subscriptions/' . $subscriptionId, [
+            'expand[]' => 'customer',
+        ]);
+
+        $payload = $response->json();
+        $customerId = (string) data_get($payload, 'customer.id', data_get($payload, 'customer', ''));
+
+        $user = User::query()
+            ->where('stripe_subscription_id', $subscriptionId)
+            ->orWhere('stripe_customer_id', $customerId)
+            ->first();
+
+        if ($user === null) {
+            $userId = (int) data_get($payload, 'metadata.user_id', 0);
+            $user = $userId > 0 ? User::query()->find($userId) : null;
+        }
+
+        if ($user === null) {
+            return null;
+        }
+
+        $this->syncUserFromStripePayload($user, $payload);
+
+        return $user->fresh();
+    }
+
     /**
      * @param array<string, mixed> $event
      */
@@ -123,6 +202,15 @@ class SubscriptionService
             $user = User::query()->find($userId);
             if ($user !== null) {
                 $this->syncUserFromStripePayload($user, $object);
+            }
+
+            return;
+        }
+
+        if (in_array($type, ['invoice.paid', 'invoice.payment_failed'], true)) {
+            $subscriptionId = (string) data_get($object, 'subscription', '');
+            if ($subscriptionId !== '') {
+                $this->syncSubscription($subscriptionId);
             }
 
             return;

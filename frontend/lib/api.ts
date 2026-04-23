@@ -4,6 +4,9 @@ import { clearAuthSession, getAuthToken } from '@/lib/auth'
 import { API_BASE_URL } from '@/lib/constants'
 import type {
   Article,
+  BillingOverview,
+  BillingSubscriptionResponse,
+  ApiUser,
   AuthResponse,
   PaginatedResponse,
   ProfileData,
@@ -146,6 +149,27 @@ export const api = {
         include_removed: params?.includeRemoved,
       })}`,
     )
+  },
+
+  getBillingOverview() {
+    return apiRequest<{ data: BillingOverview }>('/billing')
+  },
+
+  subscribeToPlan(payload: { planId: number; paymentMethod: 'card' | 'upi' }) {
+    return apiRequest<BillingSubscriptionResponse>('/billing/subscribe', {
+      method: 'POST',
+      body: {
+        plan_id: payload.planId,
+        payment_method: payload.paymentMethod,
+      },
+    })
+  },
+
+  syncSubscription(subscriptionId: string) {
+    return apiRequest<{ message: string; data: { user: ApiUser } }>('/billing/sync', {
+      method: 'POST',
+      body: { subscription_id: subscriptionId },
+    })
   },
 
   createProject(payload: { name: string; description?: string }) {
