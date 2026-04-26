@@ -27,7 +27,7 @@ export default function TopicsPage() {
   }
 
   async function loadTopics(projectId: number, refresh = false) {
-    const response = await api.getTopics(projectId, refresh ? { refresh: true, limit: 25 } : undefined)
+    const response = await api.getTopics(projectId, refresh ? { refresh: true, limit: 5 } : undefined)
     setTopics(response.data)
   }
 
@@ -149,6 +149,8 @@ export default function TopicsPage() {
     }
   }
 
+  console.log("this is my full test data", projects)
+
   return (
     <AppShell>
       <div className="space-y-6">
@@ -162,17 +164,37 @@ export default function TopicsPage() {
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">
-            <select
-              value={selectedProjectId ?? ''}
-              onChange={(event) => setSelectedProjectId(Number(event.target.value))}
-              className="rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-slate-50"
-            >
-              {projects.map((project) => (
-                <option key={project.id} value={project.id}>
-                  {project.name}
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center gap-3">
+              {projects?.length > 0 ? (
+                <div className="relative">
+                  <select
+                    value={selectedProjectId ?? ''}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      setSelectedProjectId(value ? Number(value) : null);
+                    }}
+                    className="appearance-none rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 pr-10 text-sm text-slate-100 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select a project</option>
+
+                    {projects.map((project) => (
+                      <option key={project.id} value={project.id}>
+                        {project.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  {/* Custom dropdown arrow */}
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                    ▼
+                  </span>
+                </div>
+              ) : (
+                <p className="text-sm text-slate-400 italic">
+                  No projects available
+                </p>
+              )}
+            </div>
             <Button type="button" variant="outline" onClick={handleRefresh} disabled={refreshing || !selectedProjectId}>
               {refreshing ? 'Refreshing...' : 'Refresh Topics'}
             </Button>

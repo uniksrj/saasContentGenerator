@@ -76,7 +76,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
             <div>
               <p className="text-lg font-semibold">ContentHub</p>
-              <p className="text-sm text-slate-400">Laravel + Next SaaS</p>
+              {/* <p className="text-sm text-slate-400">Laravel + Next SaaS</p> */}
             </div>
           </Link>
         </div>

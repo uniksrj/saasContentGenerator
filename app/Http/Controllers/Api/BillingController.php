@@ -72,7 +72,7 @@ class BillingController extends Controller
             'payment_method' => ['nullable', 'string', 'in:card,upi'],
         ]);
 
-        $plan = Plan::query()->where('is_active', true)->findOrFail((int) $validated['plan_id']);
+        $plan = Plan::query()->where('is_active', true)->findOrFail((int) $validated['plan_id'])->first();
         $paymentMethod = (string) ($validated['payment_method'] ?? 'card');
 
         if ($paymentMethod === 'upi') {

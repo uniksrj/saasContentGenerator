@@ -103,27 +103,48 @@ export default function ArticlesPage() {
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">
-            <select
-              value={selectedProjectId ?? ''}
-              onChange={(event) => setSelectedProjectId(Number(event.target.value))}
-              className="rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-slate-50"
-            >
-              {projects.map((project) => (
-                <option key={project.id} value={project.id}>
-                  {project.name}
-                </option>
-              ))}
-            </select>
+            {/* Project Select */}
+            <div className="relative w-full sm:w-auto">
+              <select
+                value={selectedProjectId ?? ''}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setSelectedProjectId(value ? Number(value) : null);
+                }}
+                className="w-full appearance-none rounded-sm border border-slate-700 bg-slate-900 px-4 py-2 pr-10 text-sm text-slate-100 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select a project</option>
 
-            <select
-              value={status}
-              onChange={(event) => setStatus(event.target.value)}
-              className="rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-slate-50"
-            >
-              <option value="all">All statuses</option>
-              <option value="draft">Draft</option>
-              <option value="published">Published</option>
-            </select>
+                {projects?.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
+
+              {/* Arrow */}
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                ▼
+              </span>
+            </div>
+
+            {/* Status Select */}
+            <div className="relative w-full sm:w-auto">
+              <select
+                value={status}
+                onChange={(event) => setStatus(event.target.value)}
+                className="w-full appearance-none rounded-sm border border-slate-700 bg-slate-900 px-4 py-2 pr-10 text-sm text-slate-100 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">All statuses</option>
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+              </select>
+
+              {/* Arrow */}
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                ▼
+              </span>
+            </div>
           </div>
         </div>
 
