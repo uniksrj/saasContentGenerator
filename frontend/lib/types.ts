@@ -64,6 +64,7 @@ export interface BillingPlan {
   features: string[]
   is_current: boolean
   supports_upi: boolean
+  is_checkout_ready: boolean
 }
 
 export interface BillingOverview {

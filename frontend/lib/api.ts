@@ -165,7 +165,11 @@ export const api = {
     })
   },
 
-  syncSubscription(subscriptionId: string) {
+  syncSubscription(subscriptionId: string|number|null) {
+    if (!subscriptionId) {
+      return Promise.reject()
+    }
+
     return apiRequest<{ message: string; data: { user: ApiUser } }>('/billing/sync', {
       method: 'POST',
       body: { subscription_id: subscriptionId },

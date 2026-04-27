@@ -55,6 +55,7 @@ function loadStripeScript() {
 }
 
 export default function BillingPage() {
+  const pendingSubscriptionStorageKey = 'saas_pending_subscription_id'
   const paymentElementRef = useRef<HTMLDivElement | null>(null)
   const stripeInstanceRef = useRef<any>(null)
   const elementsRef = useRef<any>(null)
@@ -73,6 +74,7 @@ export default function BillingPage() {
   const selectedPlan = billing?.plans.find((plan) => plan.id === selectedPlanId) ?? null
   const currentPlan = billing?.current_plan ?? null
   const selectedIsCurrent = selectedPlan?.is_current ?? false
+  const selectedIsCheckoutReady = selectedPlan?.is_checkout_ready ?? false
   const canUseUpi =
     selectedPlan?.supports_upi ?? false
 
@@ -137,7 +139,10 @@ export default function BillingPage() {
           return
         }
 
-        paymentElementRef.current.innerHTML = ''
+        if (elementsRef.current) {
+          const existing = elementsRef.current.getElement('payment')
+          existing?.unmount()
+        }
         const stripe = window.Stripe(billing.stripe_publishable_key)
         const elements = stripe.elements({
           clientSecret,
@@ -204,6 +209,59 @@ export default function BillingPage() {
     setSelectedPlanId((current) => current ?? billingResponse.data.current_plan_id ?? billingResponse.data.plans[0]?.id ?? null)
   }
 
+  useEffect(() => {
+    console.log(window)
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    const pendingSubscriptionId = window.sessionStorage.getItem(pendingSubscriptionStorageKey)
+    const searchParams = new URLSearchParams(window.location.search)
+    const hasStripeReturnParams =
+      searchParams.has('payment_intent') ||
+      searchParams.has('redirect_status') ||
+      searchParams.has('payment_intent_client_secret')
+
+    if (!pendingSubscriptionId || !hasStripeReturnParams) {
+      return
+    }
+
+    let active = true
+
+    async function finalizePendingSubscription() {
+      try {
+        setSubmitting(true)
+        setError(null)
+        setMessage('Finalizing your subscription...')
+        await api.syncSubscription(pendingSubscriptionId)
+        window.sessionStorage.removeItem(pendingSubscriptionStorageKey)
+        await refreshBilling()
+
+        if (!active) {
+          return
+        }
+
+        setClientSecret(null)
+        setSubscriptionId(null)
+        setMessage('Subscription activated successfully.')
+      } catch (caughtError) {
+        if (active) {
+          setError(getApiErrorMessage(caughtError))
+        }
+      } finally {
+        if (active) {
+          setSubmitting(false)
+        }
+      }
+    }
+
+    finalizePendingSubscription()
+
+    return () => {
+      active = false
+    }
+  }, [])
+
   async function handleContinueToPayment() {
     if (!selectedPlan) {
       return
@@ -211,6 +269,11 @@ export default function BillingPage() {
 
     if (paymentMethod === 'upi' && !canUseUpi) {
       setError('UPI is not available for recurring Stripe subscriptions in this setup. Please use card.')
+      return
+    }
+
+    if (selectedPlan.price_cents > 0 && !selectedPlan.is_checkout_ready) {
+      setError('This paid plan is not configured with a Stripe Price ID yet. Add the Stripe price ID in the plan settings first.')
       return
     }
 
@@ -260,12 +323,15 @@ export default function BillingPage() {
       setError(null)
       setMessage(null)
 
+      if (typeof window !== 'undefined' && subscriptionId) {
+        window.sessionStorage.setItem(pendingSubscriptionStorageKey, subscriptionId)
+      }
+
       const { error: confirmError, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
           return_url: `${window.location.origin}/dashboard/billing`,
         },
-        redirect: 'if_required',
       })
 
       if (confirmError) {
@@ -277,7 +343,15 @@ export default function BillingPage() {
       }
 
       if (subscriptionId) {
-        await api.syncSubscription(subscriptionId)
+        // await api.syncSubscription(subscriptionId)
+        setMessage('Payment processing...');
+
+        setTimeout(async () => {
+          await refreshBilling();
+        }, 3000);
+        if (typeof window !== 'undefined') {
+          window.sessionStorage.removeItem(pendingSubscriptionStorageKey)
+        }
       } else if (billing?.current_plan_id !== selectedPlan.id) {
         await refreshBilling()
       }
@@ -357,6 +431,9 @@ export default function BillingPage() {
                     <div>
                       <p className="text-xl font-semibold text-white">{plan.name}</p>
                       <p className="mt-1 text-sm text-slate-400">{plan.description || 'No description available.'}</p>
+                      {!plan.is_checkout_ready && plan.price_cents > 0 ? (
+                        <p className="mt-2 text-xs font-medium text-amber-300">Stripe price ID not configured yet</p>
+                      ) : null}
                     </div>
                     {plan.is_current ? (
                       <span className="rounded-full bg-cyan-400/10 px-3 py-1 text-xs uppercase tracking-wide text-cyan-200">
@@ -374,7 +451,7 @@ export default function BillingPage() {
 
                   <div className="mt-5 space-y-2 text-sm text-slate-300">
                     {plan.features.slice(0, 4).map((feature) => (
-                      <p key={feature}>• {feature}</p>
+                      <p key={feature}>- {feature}</p>
                     ))}
                   </div>
 
@@ -399,7 +476,7 @@ export default function BillingPage() {
                 </div>
                 <div className="flex items-center gap-2 rounded-full border border-slate-700 bg-slate-950 px-3 py-1 text-xs uppercase tracking-wide text-slate-300">
                   <span>{selectedPlan.name}</span>
-                  <span>•</span>
+                  <span>-</span>
                   <span>{formatPrice(selectedPlan)}</span>
                 </div>
               </div>
@@ -453,9 +530,15 @@ export default function BillingPage() {
                   <Button
                     type="button"
                     onClick={handleContinueToPayment}
-                    disabled={submitting || paymentMethod === 'upi' || selectedIsCurrent}
+                    disabled={submitting || paymentMethod === 'upi' || selectedIsCurrent || (selectedPlan.price_cents > 0 && !selectedIsCheckoutReady)}
                   >
-                    {submitting ? 'Preparing...' : selectedIsCurrent ? 'Current plan' : 'Continue to payment'}
+                    {submitting
+                      ? 'Preparing...'
+                      : selectedIsCurrent
+                        ? 'Current plan'
+                        : (selectedPlan.price_cents > 0 && !selectedIsCheckoutReady)
+                          ? 'Plan not configured'
+                          : 'Continue to payment'}
                   </Button>
                 </div>
               )}

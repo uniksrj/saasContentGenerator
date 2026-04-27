@@ -42,6 +42,7 @@ class BillingController extends Controller
                     'features' => $plan->features ?? [],
                     'is_current' => $user->plan_id === $plan->id,
                     'supports_upi' => strtoupper((string) $plan->currency) === 'INR',
+                    'is_checkout_ready' => (int) $plan->price_cents === 0 || filled($plan->stripe_price_id),
                 ];
             });
 
@@ -72,7 +73,7 @@ class BillingController extends Controller
             'payment_method' => ['nullable', 'string', 'in:card,upi'],
         ]);
 
-        $plan = Plan::query()->where('is_active', true)->findOrFail((int) $validated['plan_id'])->first();
+        $plan = Plan::query()->where('is_active', true)->findOrFail((int) $validated['plan_id']);
         $paymentMethod = (string) ($validated['payment_method'] ?? 'card');
 
         if ($paymentMethod === 'upi') {

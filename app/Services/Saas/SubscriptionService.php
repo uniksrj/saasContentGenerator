@@ -103,14 +103,14 @@ class SubscriptionService
             'items[0][price]' => $plan->stripe_price_id,
             'payment_behavior' => 'default_incomplete',
             'payment_settings[save_default_payment_method]' => 'on_subscription',
-            'billing_mode[type]' => 'flexible',
             'metadata[user_id]' => (string) $user->id,
             'metadata[plan_id]' => (string) $plan->id,
-            'expand[0]' => 'latest_invoice.confirmation_secret',
+            'expand[0]' => 'latest_invoice.payment_intent',
         ]);
 
         $subscriptionId = (string) $response->json('id');
-        $clientSecret = (string) data_get($response->json(), 'latest_invoice.confirmation_secret.client_secret', '');
+       
+        $clientSecret = data_get($response->json(), 'latest_invoice.payment_intent.client_secret');
 
         if ($subscriptionId === '' || $clientSecret === '') {
             throw new RuntimeException('Stripe subscription confirmation secret was not returned.');

@@ -48,6 +48,8 @@ Route::middleware('auth')->prefix('app')->name('saas.')->group(function () {
     Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
     Route::patch('/settings/profile', [SettingController::class, 'updateProfile'])->name('settings.profile');
     Route::post('/settings/subscription', [BillingController::class, 'subscribe'])->name('settings.subscription');
+    Route::post('/settings/subscription/intent', [BillingController::class, 'embeddedSubscribe'])->name('settings.subscription.intent');
+    Route::post('/settings/subscription/sync', [BillingController::class, 'sync'])->name('settings.subscription.sync');
     Route::get('/settings/subscription/success', [BillingController::class, 'success'])->name('settings.subscription.success');
     Route::get('/settings/subscription/cancelled', [BillingController::class, 'cancelled'])->name('settings.subscription.cancelled');
     Route::post('/settings/subscription/cancel', [BillingController::class, 'cancel'])->name('settings.subscription.cancel');
