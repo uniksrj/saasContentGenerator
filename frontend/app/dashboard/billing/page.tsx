@@ -54,6 +54,12 @@ function loadStripeScript() {
   })
 }
 
+function delay(ms: number) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms)
+  })
+}
+
 export default function BillingPage() {
   const pendingSubscriptionStorageKey = 'saas_pending_subscription_id'
   const paymentElementRef = useRef<HTMLDivElement | null>(null)
@@ -209,8 +215,27 @@ export default function BillingPage() {
     setSelectedPlanId((current) => current ?? billingResponse.data.current_plan_id ?? billingResponse.data.plans[0]?.id ?? null)
   }
 
+  async function syncSubscriptionWithRetry(nextSubscriptionId: string, attempts = 4) {
+    let lastError: unknown = null
+
+    for (let attempt = 0; attempt < attempts; attempt += 1) {
+      try {
+        await api.syncSubscription(nextSubscriptionId)
+        await refreshBilling()
+        return
+      } catch (caughtError) {
+        lastError = caughtError
+
+        if (attempt < attempts - 1) {
+          await delay(1500 * (attempt + 1))
+        }
+      }
+    }
+
+    throw lastError ?? new Error('Subscription could not be synced yet.')
+  }
+
   useEffect(() => {
-    console.log(window)
     if (typeof window === 'undefined') {
       return
     }
@@ -226,6 +251,7 @@ export default function BillingPage() {
       return
     }
 
+    const nextPendingSubscriptionId = pendingSubscriptionId
     let active = true
 
     async function finalizePendingSubscription() {
@@ -233,9 +259,8 @@ export default function BillingPage() {
         setSubmitting(true)
         setError(null)
         setMessage('Finalizing your subscription...')
-        await api.syncSubscription(pendingSubscriptionId)
+        await syncSubscriptionWithRetry(nextPendingSubscriptionId)
         window.sessionStorage.removeItem(pendingSubscriptionStorageKey)
-        await refreshBilling()
 
         if (!active) {
           return
@@ -244,6 +269,7 @@ export default function BillingPage() {
         setClientSecret(null)
         setSubscriptionId(null)
         setMessage('Subscription activated successfully.')
+        window.history.replaceState({}, '', '/dashboard/billing')
       } catch (caughtError) {
         if (active) {
           setError(getApiErrorMessage(caughtError))
@@ -343,12 +369,8 @@ export default function BillingPage() {
       }
 
       if (subscriptionId) {
-        // await api.syncSubscription(subscriptionId)
-        setMessage('Payment processing...');
-
-        setTimeout(async () => {
-          await refreshBilling();
-        }, 3000);
+        setMessage('Payment confirmed. Syncing your subscription...')
+        await syncSubscriptionWithRetry(subscriptionId)
         if (typeof window !== 'undefined') {
           window.sessionStorage.removeItem(pendingSubscriptionStorageKey)
         }
@@ -357,7 +379,6 @@ export default function BillingPage() {
       }
 
       setMessage('Subscription activated successfully.')
-      await refreshBilling()
       setClientSecret(null)
       setSubscriptionId(null)
     } catch (caughtError) {

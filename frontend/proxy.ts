@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 
 import { AUTH_TOKEN_KEY } from './lib/constants'
 
-const protectedPrefixes = ['/dashboard', '/projects', '/topics', '/articles', '/profile']
+const protectedPrefixes = ['/dashboard', '/projects', '/topics', '/articles', '/activity', '/profile']
 const guestOnlyPrefixes = ['/login', '/signup']
 
 export function proxy(request: NextRequest) {
@@ -31,5 +31,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/projects/:path*', '/topics/:path*', '/articles/:path*', '/profile/:path*', '/login', '/signup'],
+  matcher: ['/dashboard/:path*', '/projects/:path*', '/topics/:path*', '/articles/:path*', '/activity/:path*', '/profile/:path*', '/login', '/signup'],
 }

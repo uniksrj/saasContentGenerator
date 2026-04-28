@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import {
   FileText,
   FolderKanban,
+  History,
   LayoutDashboard,
   LogOut,
   Sparkles,
@@ -21,6 +22,7 @@ const navigation = [
   { href: '/projects', label: 'Projects', icon: FolderKanban },
   { href: '/topics', label: 'Topics', icon: Sparkles },
   { href: '/articles', label: 'Articles', icon: FileText },
+  { href: '/activity', label: 'Activity', icon: History },
   { href: '/profile', label: 'Profile', icon: UserCircle2 },
 ]
 

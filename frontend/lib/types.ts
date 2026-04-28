@@ -96,9 +96,12 @@ export interface Topic {
   source_type?: string | null
   source_url?: string | null
   score?: number | null
+  score_breakdown?: Record<string, number> | null
   status?: string | null
   published_at?: string | null
   articles_count?: number
+  created_at?: string
+  updated_at?: string
 }
 
 export interface Article {
@@ -108,10 +111,22 @@ export interface Article {
   title: string
   status: string
   category?: string | null
+  content?: string | null
+  meta_description?: string | null
+  source_url?: string | null
   published_at?: string | null
   created_at: string
+  updated_at?: string
+  is_published?: boolean
   reading_time?: number | null
   word_count?: number | null
+  table_of_contents?: Array<{
+    id: string
+    title: string
+    level: number
+    slug: string
+    order: number
+  }> | null
   topic?: {
     id: number
     title: string
@@ -144,6 +159,36 @@ export interface PaginatedResponse<T> {
   last_page: number
   per_page: number
   total: number
+}
+
+export interface ActivityUser {
+  id: number
+  name: string
+  email: string
+}
+
+export interface ActivityProject {
+  id: number
+  name: string
+  slug: string
+}
+
+export interface ActivitySubject {
+  id: number
+  title: string
+}
+
+export interface ActivityLog {
+  id: number
+  action: string
+  units: number
+  used_on?: string | null
+  created_at?: string | null
+  metadata?: Record<string, unknown> | null
+  user?: ActivityUser | null
+  project?: ActivityProject | null
+  topic?: ActivitySubject | null
+  article?: ActivitySubject | null
 }
 
 export interface AuthResponse {

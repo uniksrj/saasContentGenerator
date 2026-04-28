@@ -3,6 +3,7 @@
 import { clearAuthSession, getAuthToken } from '@/lib/auth'
 import { API_BASE_URL } from '@/lib/constants'
 import type {
+  ActivityLog,
   Article,
   BillingOverview,
   BillingSubscriptionResponse,
@@ -140,6 +141,15 @@ export const api = {
 
   profile() {
     return apiRequest<{ data: ProfileData }>('/profile')
+  },
+
+  getActivity(params?: { limit?: number; page?: number }) {
+    return apiRequest<PaginatedResponse<ActivityLog>>(
+      `/activity${buildQuery({
+        limit: params?.limit,
+        page: params?.page,
+      })}`,
+    )
   },
 
   getProjects(params?: { includeInactive?: boolean; includeRemoved?: boolean }) {
