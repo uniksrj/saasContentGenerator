@@ -116,6 +116,12 @@ class SubscriptionService
             throw new RuntimeException('Stripe subscription confirmation secret was not returned.');
         }
 
+        $user->forceFill([
+            'stripe_subscription_id' => $subscriptionId,
+            'stripe_price_id' => $plan->stripe_price_id,
+            'subscription_status' => 'incomplete',
+        ])->save();
+
         return [
             'mode' => 'stripe',
             'subscription_id' => $subscriptionId,

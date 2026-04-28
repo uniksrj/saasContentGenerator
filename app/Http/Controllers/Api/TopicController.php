@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Project;
 use App\Models\Topic;
 use App\Services\AiBlogDraftGeneratorService;
+use App\Services\Saas\ActivityLogService;
 use App\Services\Saas\UsageLimitService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,6 +15,7 @@ class TopicController extends Controller
 {
     public function __construct(
         private readonly AiBlogDraftGeneratorService $generator,
+        private readonly ActivityLogService $activityLogService,
         private readonly UsageLimitService $usageLimitService,
     )
     {
@@ -32,7 +34,18 @@ class TopicController extends Controller
 
         $shouldRefresh = $request->boolean('refresh');
         if ($shouldRefresh) {
-            $this->generator->fetchAndStoreTopics($user->id, $project, (int) ($validated['limit'] ?? 25));
+            $storedTopics = $this->generator->fetchAndStoreTopics($user->id, $project, (int) ($validated['limit'] ?? 25));
+
+            $this->activityLogService->record(
+                $user,
+                $project->id,
+                'topics_refreshed',
+                $storedTopics->count(),
+                [
+                    'project_name' => $project->name,
+                    'topics_count' => $storedTopics->count(),
+                ],
+            );
         }
 
         $topics = Topic::query()
@@ -59,11 +72,39 @@ class TopicController extends Controller
             return response()->json(['message' => $access['message']], 402);
         }
 
+        $this->activityLogService->record(
+            $user,
+            $project->id,
+            'topic_generation_requested',
+            1,
+            [
+                'project_name' => $project->name,
+                'topic_id' => $topic->id,
+                'topic_title' => $topic->title,
+            ],
+        );
+
         $result = $this->generator->runFromProvidedTopics(
             [$topic->raw_payload ?? $topic->toArray()],
             1,
             $user->id,
             $project->id
+        );
+
+        $this->activityLogService->record(
+            $user,
+            $project->id,
+            'topic_generation_completed',
+            (int) ($result['generated'] ?? 0),
+            [
+                'project_name' => $project->name,
+                'topic_id' => $topic->id,
+                'topic_title' => $topic->title,
+                'generated' => (int) ($result['generated'] ?? 0),
+                'duplicates' => (int) ($result['duplicates'] ?? 0),
+                'failed' => (int) ($result['failed'] ?? 0),
+                'tokens_used' => (int) ($result['tokens_used'] ?? 0),
+            ],
         );
 
         return response()->json([
